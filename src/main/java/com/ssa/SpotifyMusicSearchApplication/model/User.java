@@ -14,7 +14,6 @@ import java.util.Set;
 
 @Document
 @Data
-@RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString(exclude = {"id"})

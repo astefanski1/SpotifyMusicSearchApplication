@@ -7,6 +7,7 @@ import com.ssa.SpotifyMusicSearchApplication.model.Artist;
 import com.ssa.SpotifyMusicSearchApplication.model.QueryType;
 import com.ssa.SpotifyMusicSearchApplication.model.Track;
 import com.ssa.SpotifyMusicSearchApplication.response.AccessTokenResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,8 +24,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-@Service
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class ApiRequestService {
 
     private static final String CLIENT = "b0ac4ea7dd8b411d873606d4ffd96f5f:94ac8c5ae02a4cf39161f36ffb2fd34c";
@@ -33,11 +35,7 @@ public class ApiRequestService {
     private static final String ARTIST_FIND_URL = "https://api.spotify.com/v1/artists/";
     private static final String TRACK_FIND_URL = "https://api.spotify.com/v1/tracks/";
 
-    private ApiResponseMapper apiResponseMapper;
-
-    public ApiRequestService(ApiResponseMapper apiResponseMapper) {
-        this.apiResponseMapper = apiResponseMapper;
-    }
+    private final ApiResponseMapper apiResponseMapper;
 
     public String getAuthToken() {
         RestTemplate restTemplate = new RestTemplate();

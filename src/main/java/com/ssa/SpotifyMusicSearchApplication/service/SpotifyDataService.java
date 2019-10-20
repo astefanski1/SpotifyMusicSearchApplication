@@ -4,20 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ssa.SpotifyMusicSearchApplication.dto.SpotifySearchDTO;
 import com.ssa.SpotifyMusicSearchApplication.model.Artist;
 import com.ssa.SpotifyMusicSearchApplication.model.Track;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 
-@Service
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class SpotifyDataService {
 
-    private ApiRequestService apiRequestService;
-
-    public SpotifyDataService(ApiRequestService apiRequestService) {
-        this.apiRequestService = apiRequestService;
-    }
+    private final ApiRequestService apiRequestService;
 
     public String getAuthToken() {
         return apiRequestService.getAuthToken();

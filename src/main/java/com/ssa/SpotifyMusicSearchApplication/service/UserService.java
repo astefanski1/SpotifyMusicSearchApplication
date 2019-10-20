@@ -2,7 +2,9 @@ package com.ssa.SpotifyMusicSearchApplication.service;
 
 import com.ssa.SpotifyMusicSearchApplication.dto.UserDTO;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.ArtistAlreadyExistsInFavoriteCollectionException;
+import com.ssa.SpotifyMusicSearchApplication.exceptions.ArtistDoesNotExists;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.TrackAlreadyExistsInFavoriteCollectionException;
+import com.ssa.SpotifyMusicSearchApplication.exceptions.TrackDoesNotExists;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.UserDoesNotExistsException;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.UsernameIsAlreadyTakenException;
 import com.ssa.SpotifyMusicSearchApplication.model.Artist;
@@ -12,34 +14,25 @@ import com.ssa.SpotifyMusicSearchApplication.repository.ArtistRepository;
 import com.ssa.SpotifyMusicSearchApplication.repository.TrackRepository;
 import com.ssa.SpotifyMusicSearchApplication.repository.UserRepository;
 import com.ssa.SpotifyMusicSearchApplication.response.ErrorResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
-@Service
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class UserService {
 
-    private UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
-    private ArtistRepository artistRepository;
-    private TrackRepository trackRepository;
-    private SpotifyDataService spotifyDataService;
-
-    public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       TrackRepository trackRepository,
-                       ArtistRepository artistRepository,
-                       SpotifyDataService spotifyDataService) {
-
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.trackRepository = trackRepository;
-        this.artistRepository = artistRepository;
-        this.spotifyDataService = spotifyDataService;
-    }
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ArtistRepository artistRepository;
+    private final TrackRepository trackRepository;
+    private final SpotifyDataService spotifyDataService;
+    private final TrackService trackService;
+    private final ArtistService artistService;
 
     public User createNewUser(UserDTO userDTO) throws UsernameIsAlreadyTakenException {
         log.info("Creating user: {}", userDTO.getUsername());
@@ -65,7 +58,8 @@ public class UserService {
 
     public Artist addArtistToFavorites(String spotifyArtistId, String username) {
         User user = findUserByUsername(username);
-        checkForArtistDuplicatesInFavoriteCollection(user, spotifyArtistId);
+        if (isArtistExistsInFavoriteCollection(user, spotifyArtistId))
+            throw new ArtistAlreadyExistsInFavoriteCollectionException();
         Artist artist = artistRepository.save(spotifyDataService.findArtistById(spotifyArtistId));
         user.getFavoriteArtist().add(artist);
         userRepository.save(user);
@@ -74,21 +68,37 @@ public class UserService {
 
     public Track addTrackToFavorites(String spotifyTrackId, String username) {
         User user = findUserByUsername(username);
-        checkForTrackDuplicatesInFavoriteCollection(user, spotifyTrackId);
+        if (isTrackExistsInFavoriteCollection(user, spotifyTrackId))
+            throw new TrackAlreadyExistsInFavoriteCollectionException();
         Track track = trackRepository.save(spotifyDataService.findTrackById(spotifyTrackId));
         user.getFavoriteTracks().add(track);
         userRepository.save(user);
         return track;
     }
 
-    private void checkForArtistDuplicatesInFavoriteCollection(User user, String spotifyArtistId) {
-        if (user.getFavoriteArtist().stream().anyMatch(artist -> artist.getSpotifyId().equals(spotifyArtistId)))
-            throw new ArtistAlreadyExistsInFavoriteCollectionException();
+    public void deleteTrackFromFavorites(String id, String username) {
+        User user = findUserByUsername(username);
+        if (!isTrackExistsInFavoriteCollection(user, id)) throw new TrackDoesNotExists();
+        Track track = trackService.findTrackBySpotifyId(id);
+        user.getFavoriteTracks().remove(track);
+        trackRepository.delete(track);
     }
 
-    private void checkForTrackDuplicatesInFavoriteCollection(User user, String spotifyTrackId) {
-        if (user.getFavoriteTracks().stream().anyMatch(track -> track.getSpotifyId().equals(spotifyTrackId)))
-            throw new TrackAlreadyExistsInFavoriteCollectionException();
+    public void deleteArtistFromFavorites(String id, String username) {
+        User user = findUserByUsername(username);
+        if (!isArtistExistsInFavoriteCollection(user, id)) throw new ArtistDoesNotExists();
+        Artist artist = artistService.findArtistBySpotifyId(id);
+        user.getFavoriteArtist().remove(artist);
+        artistRepository.delete(artist);
+    }
+
+    private boolean isArtistExistsInFavoriteCollection(User user, String spotifyArtistId) {
+        return user.getFavoriteArtist().stream().anyMatch(artist -> artist.getSpotifyId().equals(spotifyArtistId));
+
+    }
+
+    private boolean isTrackExistsInFavoriteCollection(User user, String spotifyTrackId) {
+        return user.getFavoriteTracks().stream().anyMatch(track -> track.getSpotifyId().equals(spotifyTrackId));
     }
 
     private User findUserByUsername(String username) {

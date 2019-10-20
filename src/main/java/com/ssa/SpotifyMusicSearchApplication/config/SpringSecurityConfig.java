@@ -33,9 +33,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
+        http.csrf().disable();
+
         http.httpBasic().and().authorizeRequests()
-                .antMatchers(HttpMethod.POST, "/users").permitAll()
-                .antMatchers("/registration").permitAll()
+                .antMatchers(HttpMethod.POST, "/users/register").permitAll()
                 .anyRequest().authenticated()
                 .and().formLogin()
                 .defaultSuccessUrl("/swagger-ui.html", true);
@@ -43,7 +44,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/v2/api-docs", "/swagger-resources/**", "/configuration/**", "/webjars/**", "/h2-console/**", "/registration");
+        web.ignoring().antMatchers("/v2/api-docs", "/swagger-resources/**", "/configuration/**", "/webjars/**", "/h2-console/**", "/users/register");
     }
 
     @Bean
