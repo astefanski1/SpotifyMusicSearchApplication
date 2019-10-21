@@ -1,4 +1,4 @@
-# Spotify Search Application
+# Spotify Music Search Application
 
 Application to search music tracks and artists by Spotify Web API.
 
@@ -9,17 +9,19 @@ Application to search music tracks and artists by Spotify Web API.
    ````  
     Url: http://localhost:8080/users/register
     Method: POST
-    Body - format type [RAW]
+    Body - format type [RAW] 
+    [example values]
+    
     {
       "username": "name",
       "password": "password"
     }
    ````
 
-3. Go to page http://localhost:8080/ log in to app. After log in you will be redirected to swagger page where
-you can find all available REST points.
+3. Go to page http://localhost:8080/ and log in to app. After log in to application you will be redirected to swagger page where
+you can find all available REST endpoints.
 
-## REST Points
+## REST End-oints
 
 #### User Controller
 
