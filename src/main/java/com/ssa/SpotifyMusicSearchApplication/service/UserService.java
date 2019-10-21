@@ -7,6 +7,7 @@ import com.ssa.SpotifyMusicSearchApplication.exceptions.TrackAlreadyExistsInFavo
 import com.ssa.SpotifyMusicSearchApplication.exceptions.TrackDoesNotExists;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.UserDoesNotExistsException;
 import com.ssa.SpotifyMusicSearchApplication.exceptions.UsernameIsAlreadyTakenException;
+import com.ssa.SpotifyMusicSearchApplication.exceptions.ValidationException;
 import com.ssa.SpotifyMusicSearchApplication.model.Artist;
 import com.ssa.SpotifyMusicSearchApplication.model.Track;
 import com.ssa.SpotifyMusicSearchApplication.model.User;
@@ -35,7 +36,6 @@ public class UserService {
     private final ArtistService artistService;
 
     public User createNewUser(UserDTO userDTO) throws UsernameIsAlreadyTakenException {
-        log.info("Creating user: {}", userDTO.getUsername());
 
         if (userRepository.findByUsername(userDTO.getUsername()).isPresent())
             throw new UsernameIsAlreadyTakenException(new ErrorResponse("This username is already taken"));
@@ -56,37 +56,43 @@ public class UserService {
         return findUserByUsername(username).getFavoriteArtist();
     }
 
-    public Artist addArtistToFavorites(String spotifyArtistId, String username) {
+    public Artist addArtistToFavorites(String spotifyArtistId, String username) throws ValidationException {
         User user = findUserByUsername(username);
         if (isArtistExistsInFavoriteCollection(user, spotifyArtistId))
             throw new ArtistAlreadyExistsInFavoriteCollectionException();
         Artist artist = artistRepository.save(spotifyDataService.findArtistById(spotifyArtistId));
         user.getFavoriteArtist().add(artist);
         userRepository.save(user);
+
+        log.info("User [{}] added artist [id = {}, name = {}] to list of favorite artists", username, spotifyArtistId, artist.getName());
+
         return artist;
     }
 
-    public Track addTrackToFavorites(String spotifyTrackId, String username) {
+    public Track addTrackToFavorites(String spotifyTrackId, String username) throws ValidationException {
         User user = findUserByUsername(username);
         if (isTrackExistsInFavoriteCollection(user, spotifyTrackId))
             throw new TrackAlreadyExistsInFavoriteCollectionException();
         Track track = trackRepository.save(spotifyDataService.findTrackById(spotifyTrackId));
         user.getFavoriteTracks().add(track);
         userRepository.save(user);
+
+        log.info("User [{}] added track [id = {}, name = {}] to list of favorite tracks", username, spotifyTrackId, track.getName());
+
         return track;
     }
 
-    public void deleteTrackFromFavorites(String id, String username) {
+    public void deleteTrackFromFavorites(String id, String username) throws ValidationException {
         User user = findUserByUsername(username);
-        if (!isTrackExistsInFavoriteCollection(user, id)) throw new TrackDoesNotExists();
+        if (!isTrackExistsInFavoriteCollection(user, id)) throw new ValidationException(new ErrorResponse("Track with that spotify id does not exists in your collection!"));
         Track track = trackService.findTrackBySpotifyId(id);
         user.getFavoriteTracks().remove(track);
         trackRepository.delete(track);
     }
 
-    public void deleteArtistFromFavorites(String id, String username) {
+    public void deleteArtistFromFavorites(String id, String username) throws ValidationException {
         User user = findUserByUsername(username);
-        if (!isArtistExistsInFavoriteCollection(user, id)) throw new ArtistDoesNotExists();
+        if (!isArtistExistsInFavoriteCollection(user, id)) throw new ValidationException(new ErrorResponse("Artist with that spotify id does not exists in your collection!"));
         Artist artist = artistService.findArtistBySpotifyId(id);
         user.getFavoriteArtist().remove(artist);
         artistRepository.delete(artist);
