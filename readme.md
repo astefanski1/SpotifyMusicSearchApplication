@@ -21,7 +21,7 @@ Application to search music tracks and artists by Spotify Web API.
 3. Go to page http://localhost:8080/ and log in to app. After log in to application you will be redirected to swagger page where
 you can find all available REST endpoints.
 
-## REST End-oints
+## REST Endpoints
 
 #### User Controller
 
