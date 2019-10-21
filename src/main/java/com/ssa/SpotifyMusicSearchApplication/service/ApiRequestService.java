@@ -44,28 +44,8 @@ public class ApiRequestService {
         return response.getBody().getAccess_token();
     }
 
-    public URI prepareAuthUri() {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(AUTH_TOKEN_URL).queryParam("grant_type", "client_credentials");
-        return builder.build().encode().toUri();
-    }
-
-    public HttpHeaders prepareAuthTokenHeaders() {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        httpHeaders.set("Accept", MediaType.APPLICATION_JSON_VALUE);
-        String token = new String(Base64.getEncoder().encode((CLIENT).getBytes()));
-        httpHeaders.add("Authorization", "Basic " + token);
-
-        return httpHeaders;
-    }
-
     public SpotifySearchDTO prepareSearchRequest(String query, String type, int limit, int offset) throws JsonProcessingException, UnsupportedEncodingException {
-        RestTemplate restTemplate = new RestTemplate();
         SpotifySearchDTO spotifySearchDTO = new SpotifySearchDTO();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
-        headers.add("Authorization", "Bearer " + getAuthToken());
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(SEARCH_URL)
                 .queryParam("q", URLEncoder.encode(query, StandardCharsets.UTF_8.toString()))
@@ -74,13 +54,7 @@ public class ApiRequestService {
                 .queryParam("limit", limit)
                 .queryParam("offset", offset);
 
-        HttpEntity<?> entity = new HttpEntity<>(headers);
-
-        HttpEntity<String> response = restTemplate.exchange(
-                builder.toUriString(),
-                HttpMethod.GET,
-                entity,
-                String.class);
+        HttpEntity<String> response = executeRequest(builder.toUriString());
 
         if (type.equals(QueryType.TRACK.getType())) {
             spotifySearchDTO.setTracks(apiResponseMapper.mapToTrackList(response));
@@ -92,43 +66,48 @@ public class ApiRequestService {
     }
 
     public Track findTrackById(String id) {
-        RestTemplate restTemplate = new RestTemplate();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
-        headers.add("Authorization", "Bearer " + getAuthToken());
-
-        HttpEntity<?> entity = new HttpEntity<>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(TRACK_FIND_URL + id)
                 .queryParam("market", "US");
 
-
-        HttpEntity<String> response = restTemplate.exchange(
-                builder.toUriString(),
-                HttpMethod.GET,
-                entity,
-                String.class);
-
-        return apiResponseMapper.mapToTrack(response);
+        return apiResponseMapper.mapToTrack(executeRequest(builder.toUriString()));
     }
 
     public Artist findArtistById(String id) {
+        return apiResponseMapper.mapToArtist(executeRequest(ARTIST_FIND_URL + id));
+    }
+
+    private HttpEntity<String> executeRequest(String url) {
         RestTemplate restTemplate = new RestTemplate();
+        HttpEntity<?> entity = new HttpEntity<>(prepareHeaders());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
-        headers.add("Authorization", "Bearer " + getAuthToken());
-
-        HttpEntity<?> entity = new HttpEntity<>(headers);
-
-        HttpEntity<String> response = restTemplate.exchange(
-                ARTIST_FIND_URL + id,
+        return restTemplate.exchange(
+                url,
                 HttpMethod.GET,
                 entity,
                 String.class);
+    }
 
-        return apiResponseMapper.mapToArtist(response);
+    private HttpHeaders prepareHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+        headers.add("Authorization", "Bearer " + getAuthToken());
+        return headers;
+    }
+
+    private HttpHeaders prepareAuthTokenHeaders() {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        httpHeaders.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+        String token = new String(Base64.getEncoder().encode((CLIENT).getBytes()));
+        httpHeaders.add("Authorization", "Basic " + token);
+
+        return httpHeaders;
+    }
+
+    private URI prepareAuthUri() {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(AUTH_TOKEN_URL).queryParam("grant_type", "client_credentials");
+        return builder.build().encode().toUri();
     }
 
 }

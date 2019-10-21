@@ -9,7 +9,7 @@ Application to search music tracks and artists by Spotify Web API.
    ````  
     Url: http://localhost:8080/users/register
     Method: POST
-    Body - format type [RAW] 
+    Body [FormatType: RAW, ContentType: JSON] 
     [example values]
     
     {
